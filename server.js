@@ -1,0 +1,3 @@
+const http=require('http'),fs=require('fs'),path=require('path');
+const PORT=process.env.PORT||3000;
+http.createServer((req,res)=>{let p=req.url.split('?')[0];if(p==='/'||p==='')p='/index.html';let f=path.join(__dirname,p);fs.stat(f,(e,s)=>{if(e||!s.isFile())f=path.join(__dirname,'index.html');res.writeHead(200,{'Content-Type':f.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream'});fs.createReadStream(f).pipe(res);});}).listen(PORT,'0.0.0.0',()=>console.log('CROSSCERT WFH listening on '+PORT));
