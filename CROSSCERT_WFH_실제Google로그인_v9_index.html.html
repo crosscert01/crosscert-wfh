@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CROSSCERT 재택근무 관리시스템</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#121933; --panel2:#182142; --text:#eef3ff; --muted:#a9b4d0;
+  --line:#29345c; --blue:#5b8cff; --green:#31c48d; --yellow:#f3b33d; --red:#ef5b67; --white:#fff;
+}
+*{box-sizing:border-box} body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:#0e1530;border-right:1px solid var(--line);padding:24px 16px;position:sticky;top:0;height:100vh}
+.brand{font-weight:800;font-size:20px;margin-bottom:6px}.sub{font-size:12px;color:var(--muted);margin-bottom:24px}
+.nav button{width:100%;text-align:left;border:0;background:transparent;color:var(--muted);padding:12px 14px;border-radius:10px;margin:4px 0}
+.nav button.active,.nav button:hover{background:var(--panel2);color:var(--white)}
+.main{padding:24px;min-width:0}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+h1{font-size:25px;margin:0}.rolebox{display:flex;align-items:center;gap:8px}.rolebox select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.kpi .label{font-size:13px;color:var(--muted)}.kpi .num{font-size:30px;font-weight:800;margin-top:8px}.kpi .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.section{margin-top:18px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.section h2{font-size:17px;margin:0}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:13px;text-align:left;vertical-align:top} th{color:var(--muted);font-weight:700;background:#10172d}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.ok{background:rgba(49,196,141,.15);color:#62e6b2}.warn{background:rgba(243,179,61,.15);color:#ffd070}.bad{background:rgba(239,91,103,.15);color:#ff8f98}.info{background:rgba(91,140,255,.15);color:#91b0ff}
+.btn{border:0;border-radius:8px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:700}.btn.secondary{background:#26325b}.btn.green{background:#1f9e72}.btn.red{background:#b94653}
+.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field input,.field select,.field textarea{width:100%;background:#0e1530;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px}.field textarea{min-height:90px;resize:vertical}.full{grid-column:1/-1}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.hidden{display:none!important}.muted{color:var(--muted)}.small{font-size:12px}.notice{padding:12px 14px;background:#111a37;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:10px;margin-bottom:14px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+.progress{height:8px;background:#26325b;border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;background:var(--green)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}.modalbox{max-width:760px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;max-height:85vh;overflow:auto}
+@media(max-width:1000px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.grid,.formgrid{grid-template-columns:1fr}.main{padding:14px}.topbar{align-items:flex-start;flex-direction:column}}
+
+.login-screen{position:fixed;inset:0;background:#0b1020;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.login-box{width:100%;max-width:420px;background:#121933;border:1px solid #29345c;border-radius:16px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login-box h1{margin:0 0 6px;font-size:24px}
+.login-box .field{margin-top:14px}
+.login-box input{width:100%;background:#0e1530;color:#eef3ff;border:1px solid #29345c;border-radius:8px;padding:11px}
+.userbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.userpill{padding:7px 10px;border-radius:999px;background:#182142;color:#eef3ff;font-size:12px}
+.logout-btn{border:0;border-radius:8px;padding:8px 10px;background:#b94653;color:white;font-weight:700;cursor:pointer}
+.role-note{font-size:11px;color:#a9b4d0;margin-top:6px;line-height:1.5}
+
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleLogin()"></script>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h1>CROSSCERT WFH</h1>
+    <div class="muted">Google Workspace 계정으로 로그인</div>
+    <div class="notice" style="margin-top:16px">
+      회사 Google 계정으로 로그인하면 등록된 이메일을 기준으로 직원 / 팀장 / HR 관리자 권한이 자동 적용됩니다.
+    </div>
+    <div id="googleSignInButton" style="margin-top:20px;min-height:44px;display:flex;justify-content:center"></div>
+    <div class="role-note">
+      회사 Google Workspace 계정(<b>@crosscert.com</b>)으로만 로그인할 수 있습니다.
+    </div>
+    <div id="loginMsg" class="small" style="color:#ff8f98;margin-top:10px"></div>
+  </div>
+</div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">CROSSCERT WFH</div>
+    <div class="sub">재택근무 통합 관리시스템</div>
+    <div class="nav">
+      <button class="active" data-view="dashboard">대시보드</button>
+      <button data-view="worklog">내 재택근무</button>
+      <button data-view="approval">팀장 확인</button>
+      <button data-view="employees">재택근무자 관리</button>
+      <button data-view="risk">이상징후 관리</button>
+      <button data-view="profiles">부서별 관리기준</button>
+      <button data-view="reports">리포트</button>
+      <button data-view="users">계정·권한관리</button>
+      <button data-view="settings">관리기준</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1 id="pageTitle">대시보드</h1><div class="muted small" id="todayText"></div></div>
+      <div class="userbar">
+        <span class="userpill" id="loginUserLabel">로그인 필요</span>
+        <button class="logout-btn" onclick="logout()">로그아웃</button>
+      </div>
+    </div>
+
+    <section id="dashboard" class="view">
+      <div class="notice">HR은 재택근무자의 <b>근태 + 업무수행 + 팀장확인</b>을 함께 관리합니다. 이상징후는 자동 표시됩니다.</div>
+      <div class="grid">
+        <div class="card kpi"><div class="label">오늘 재택근무자</div><div class="num" id="kpiToday">0</div><div class="hint">등록된 재택근무 인원</div></div>
+        <div class="card kpi"><div class="label">출근 완료</div><div class="num" id="kpiIn">0</div><div class="hint">체크인 기록 기준</div></div>
+        <div class="card kpi"><div class="label">이상징후</div><div class="num" id="kpiRisk">0</div><div class="hint">근태·업무·반복패턴 통합</div></div>
+        <div class="card kpi"><div class="label">팀장 미확인</div><div class="num" id="kpiPending">0</div><div class="hint">확인 대기 건</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>이상징후 집중관리</h2><span class="muted small">위험점수·반복패턴·미조치 건 우선</span></div>
+        <div style="overflow:auto"><table>
+          <thead><tr><th>직원</th><th>위험등급</th><th>위험점수</th><th>주요 이상징후</th><th>최근 5회 반복</th><th>조치상태</th><th>관리</th></tr></thead>
+          <tbody id="riskRows"></tbody>
+        </table></div>
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>오늘 재택근무 현황</h2><button class="btn secondary" onclick="exportCSV()">CSV 내보내기</button></div>
+        <div style="overflow:auto"><table><thead><tr><th>직원</th><th>부서</th><th>출근</th><th>퇴근</th><th>업무계획</th><th>상태</th><th>팀장확인</th></tr></thead><tbody id="todayRows"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="worklog" class="view hidden">
+      <div class="card">
+        <h2 style="margin-top:0">재택근무 일지 작성</h2>
+        <div class="formgrid">
+          <div class="field"><label>성명</label><input id="name" value="홍길동"></div>
+          <div class="field"><label>부서</label><input id="dept" value="인사팀"></div>
+          <div class="field"><label>부서장</label><input id="head" value="이달훈"></div>
+          <div class="field"><label>근무일</label><input type="date" id="workDate"></div>
+          <div class="field full"><label>Today's Tasks Plan</label><textarea id="plan" placeholder="오늘 수행할 업무를 구체적으로 입력"></textarea></div>
+          <div class="field full"><label>Completed Tasks</label><textarea id="completed" placeholder="완료한 업무"></textarea></div>
+          <div class="field full"><label>Ongoing Tasks</label><textarea id="ongoing" placeholder="진행 중인 업무"></textarea></div>
+          <div class="field full"><label>Next day Tasks Plan</label><textarea id="nextPlan" placeholder="다음 근무일 계획"></textarea></div>
+          <div class="field full"><label>Remarks</label><textarea id="remarks" placeholder="특이사항 또는 협업/장애 이슈"></textarea></div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><h2>소정근로시간 내 업무 충실도 확인</h2><span class="muted small">업무 증빙 중심</span></div>
+          <div class="formgrid">
+            <div class="field"><label>오전 업무 시작 확인</label><select id="amCheck"><option value="">선택</option><option value="Y">정상 수행</option><option value="N">미수행/지연</option></select></div>
+            <div class="field"><label>오후 업무 진행 확인</label><select id="pmCheck"><option value="">선택</option><option value="Y">정상 수행</option><option value="N">미수행/지연</option></select></div>
+            <div class="field full"><label>중간 진행내용 / Check-in</label><textarea id="midProgress" placeholder="예: 오전 계획 3건 중 2건 완료, 1건 진행 중 / 협업 요청 대응 완료"></textarea></div>
+            <div class="field"><label>금일 계획 대비 완료율(%)</label><input type="number" id="completionRate" min="0" max="100" value="0"></div>
+            <div class="field"><label>업무 중 연락·협업 가능 상태</label><select id="availability"><option value="">선택</option><option value="normal">정상</option><option value="limited">일부 제한</option><option value="issue">연락 곤란</option></select></div>
+            <div class="field full"><label>업무 산출물 / 증빙</label><textarea id="evidence" placeholder="작성 문서, 처리 건, 시스템 반영, 회의결과, 산출물 위치 등"></textarea></div>
+            <div class="field full"><label>업무 지연·중단 사유</label><textarea id="delayReason" placeholder="업무가 계획대로 진행되지 않은 경우 사유와 조치내용을 입력"></textarea></div>
+            <div class="field"><label>부서 특성 관리유형</label>
+              <select id="deptProfile">
+                <option value="auto">부서명으로 자동판정</option>
+                <option value="dev">개발/연구</option>
+                <option value="ops">데이터센터/운영</option>
+                <option value="sales">영업/사업</option>
+                <option value="hr">인사/관리</option>
+                <option value="finance">재경</option>
+                <option value="support">고객지원/콜센터</option>
+                <option value="general">일반</option>
+              </select>
+            </div>
+            <div class="field"><label>핵심업무 처리건수</label><input type="number" id="workCount" min="0" value="0"></div>
+            <div class="field full"><label>부서 특성별 핵심업무 기록</label><textarea id="deptEvidence" placeholder="예: 개발-커밋/이슈번호, 운영-점검/장애/티켓, 영업-고객미팅/제안/CRM, 인사-처리문서/마감/보고, 재경-정산/지급/증빙, 고객지원-콜/티켓/SLA"></textarea></div>
+
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn green" onclick="clockIn()">출근 체크</button>
+          <button class="btn secondary" onclick="saveDraft()">임시저장</button>
+          <button class="btn" onclick="clockOut()">퇴근 및 일지제출</button>
+        </div>
+        <div id="workStatus" class="small muted" style="margin-top:10px"></div>
+      </div>
+      <div class="section"><div class="section-head"><h2>내 최근 기록</h2></div><div style="overflow:auto"><table><thead><tr><th>일자</th><th>출근</th><th>퇴근</th><th>상태</th><th>팀장확인</th></tr></thead><tbody id="myRows"></tbody></table></div></div>
+    </section>
+
+    <section id="approval" class="view hidden">
+      <div class="section-head"><h2>팀장 확인 대기</h2><span class="muted small">일지 내용과 근태 이상 여부를 함께 확인</span></div>
+      <div style="overflow:auto"><table><thead><tr><th>직원</th><th>일자</th><th>계획</th><th>완료업무</th><th>완료율</th><th>업무충실도</th><th>조치</th></tr></thead><tbody id="approvalRows"></tbody></table></div>
+    </section>
+
+    <section id="employees" class="view hidden">
+      <div class="section-head"><h2>재택근무자 관리</h2><button class="btn" onclick="openEmployeeModal()">재택근무자 등록</button></div><div class="notice">등록된 재택근무자는 여기에서 추가·삭제할 수 있습니다. 삭제 시 대상자 목록에서만 제외되며 과거 근무기록은 보존됩니다.</div>
+      <div class="filters"><input id="empSearch" placeholder="이름/부서 검색" oninput="renderEmployees()"><select id="empStatus" onchange="renderEmployees()"><option value="">전체</option><option value="active">재택승인</option><option value="hold">중지</option></select></div>
+      <div class="section" style="overflow:auto"><table><thead><tr><th>직원</th><th>부서</th><th>부서장</th><th>재택유형</th><th>승인기간</th><th>상태</th><th>누적 이상징후</th><th>관리</th></tr></thead><tbody id="employeeRows"></tbody></table></div>
+    </section>
+
+
+    <section id="risk" class="view hidden">
+      <div class="notice"><b>이상징후 관리 기준</b> — 단일 사건보다 <b>반복성·복합성·미조치 상태</b>를 우선 관리합니다. 위험점수는 관리 우선순위를 정하기 위한 내부 지표입니다.</div>
+      <div class="grid">
+        <div class="card kpi"><div class="label">고위험</div><div class="num" id="riskHigh">0</div><div class="hint">즉시 점검 필요</div></div>
+        <div class="card kpi"><div class="label">중위험</div><div class="num" id="riskMid">0</div><div class="hint">팀장 확인 필요</div></div>
+        <div class="card kpi"><div class="label">미조치</div><div class="num" id="riskOpen">0</div><div class="hint">조치 미완료 건</div></div>
+        <div class="card kpi"><div class="label">반복 이상</div><div class="num" id="riskRepeat">0</div><div class="hint">최근 5회 중 2회 이상</div></div>
+      </div>
+      <div class="section">
+        <div class="filters">
+          <input id="riskSearch" placeholder="이름/부서 검색" oninput="renderRiskManagement()">
+          <select id="riskLevelFilter" onchange="renderRiskManagement()"><option value="">전체 등급</option><option value="high">고위험</option><option value="mid">중위험</option><option value="low">저위험</option></select>
+          <select id="riskActionFilter" onchange="renderRiskManagement()"><option value="">전체 조치</option><option value="open">미조치</option><option value="checking">확인중</option><option value="done">조치완료</option></select>
+        </div>
+      </div>
+      <div class="section" style="overflow:auto"><table>
+        <thead><tr><th>직원</th><th>부서</th><th>등급</th><th>점수</th><th>이상징후 상세</th><th>반복패턴</th><th>마지막 확인</th><th>조치상태</th><th>관리</th></tr></thead>
+        <tbody id="riskManageRows"></tbody>
+      </table></div>
+    </section>
+
+
+    <section id="profiles" class="view hidden">
+      <div class="notice">
+        <b>부서별 업무충실도·이상징후 기준</b><br>
+        동일한 재택근무라도 부서별 핵심업무와 산출물이 다르므로, 공통 근태기준에 <b>부서 특성별 관리항목과 가중치</b>를 추가합니다.
+      </div>
+      <div class="section">
+        <div class="section-head"><h2>부서 프로파일</h2><button class="btn" onclick="resetDeptProfiles()">기본값 복원</button></div>
+        <div style="overflow:auto"><table>
+          <thead><tr><th>부서유형</th><th>핵심 관리항목</th><th>주요 증빙</th><th>고위험 이상징후</th><th>가중치</th></tr></thead>
+          <tbody id="profileRows"></tbody>
+        </table></div>
+      </div>
+      <div class="section">
+        <div class="card">
+          <h2 style="margin-top:0">부서별 관리 원칙</h2>
+          <div class="small" style="line-height:1.8">
+            <b>개발/연구:</b> 커밋·이슈·배포·테스트·코드리뷰·문서화 등 결과물과 진행흐름 중심<br>
+            <b>데이터센터/운영:</b> 장애대응·점검·모니터링·티켓·변경이력·인수인계 누락 여부 중심<br>
+            <b>영업/사업:</b> 고객접점·상담·제안·Follow-up·파이프라인 진척·CRM 기록 중심<br>
+            <b>인사/관리:</b> 마감준수·문서처리·요청응답·회의/보고·후속조치·보안문서 취급 중심<br>
+            <b>재경:</b> 지급/정산/마감·증빙 정확성·승인흐름·오류/재처리 발생 여부 중심<br>
+            <b>고객지원/콜센터:</b> 응답가능 상태·콜/티켓 처리량·SLA·미처리건·이관기록 중심
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reports" class="view hidden">
+      <div class="grid">
+        <div class="card"><b>출근 준수율</b><div style="font-size:28px;font-weight:800;margin:10px 0" id="r1">0%</div><div class="progress"><span id="p1" style="width:0%"></span></div></div>
+        <div class="card"><b>일지 제출률</b><div style="font-size:28px;font-weight:800;margin:10px 0" id="r2">0%</div><div class="progress"><span id="p2" style="width:0%"></span></div></div>
+        <div class="card"><b>팀장 확인률</b><div style="font-size:28px;font-weight:800;margin:10px 0" id="r3">0%</div><div class="progress"><span id="p3" style="width:0%"></span></div></div>
+        <div class="card"><b>이상징후 건수</b><div style="font-size:28px;font-weight:800;margin:10px 0" id="r4">0</div><div class="small muted">선택기간 기준</div></div>
+      </div>
+      <div class="section"><div class="section-head"><h2>개인별 관리지표</h2></div><div style="overflow:auto"><table><thead><tr><th>직원</th><th>근무일수</th><th>지각</th><th>퇴근누락</th><th>일지누락</th><th>업무충실도 평균</th><th>팀장 미확인</th><th>관리등급</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
+    </section>
+
+
+    <section id="users" class="view hidden">
+      <div class="section-head"><h2>계정 및 권한 관리</h2><button class="btn" onclick="openUserModal()">계정 등록</button></div>
+      <div class="notice">HR 관리자만 접근할 수 있습니다. Google Workspace 이메일을 기준으로 직원은 본인 정보만, 팀장은 본인과 연결된 팀원만 조회할 수 있습니다.</div>
+      <div style="overflow:auto"><table>
+        <thead><tr><th>Google 계정</th><th>성명</th><th>권한</th><th>부서</th><th>팀</th><th>상급 팀장</th><th>관리</th></tr></thead>
+        <tbody id="userRows"></tbody>
+      </table></div>
+    </section>
+
+    <section id="settings" class="view hidden">
+      <div class="card"><h2 style="margin-top:0">Google 로그인 설정</h2>
+      <div class="notice">
+        Google Workspace 로그인용 OAuth Web Client가 연결되어 있습니다.<br>
+        허용 도메인은 현재 <b>crosscert.com</b>으로 설정되어 있습니다.
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px"><h2 style="margin-top:0">관리 기준</h2>
+        <div class="formgrid">
+          <div class="field"><label>기준 출근시간</label><input type="time" id="stdIn" value="09:00"></div>
+          <div class="field"><label>지각 판정시간</label><input type="time" id="lateAt" value="09:10"></div>
+          <div class="field"><label>기준 퇴근시간</label><input type="time" id="stdOut" value="18:00"></div>
+          <div class="field"><label>최소 업무일지 글자수</label><input type="number" id="minText" value="20"></div>
+        </div>
+        <div class="actions"><button class="btn" onclick="saveSettings()">기준 저장</button><button class="btn secondary" onclick="resetDemo()">데모 초기화</button></div>
+        <div class="notice" style="margin-top:16px">
+    <b>이상징후 판정 로직</b><br>
+    • 고위험: 위험점수 60점 이상 / 중위험: 30~59점 / 저위험: 29점 이하<br>
+    • 최근 5회 기록에서 동일 이상징후가 2회 이상 반복되면 반복가중치를 추가합니다.<br>
+    • 동일 근무일에 복수 이상징후가 함께 발생한 기록이 반복되면 추가 가중치를 적용합니다.<br>
+    • HR은 조치상태를 <b>미조치 → 확인중 → 조치완료</b>로 관리하고 다음 점검일을 기록할 수 있습니다.
+    </div>
+    <div class="notice" style="margin-top:16px">
+    <b>업무충실도 판단 원칙</b><br>
+    ① 업무 시작 시 당일 계획 등록 → ② 근무시간 중 중간 진행내용 확인 → ③ 계획 대비 완료율 → ④ 산출물/처리내역 증빙 → ⑤ 연락·협업 가능 상태 → ⑥ 팀장 확인의 순서로 관리합니다.<br>
+    <span class="small muted">단순 접속시간이나 키보드·마우스 움직임이 아니라 실제 업무수행 기록을 중심으로 판단하도록 설계했습니다.</span>
+    </div>
+    <p class="small muted">※ 실제 운영 시 사내 SSO, 조직도, 전자결재, 근태시스템 API 연동을 권장합니다.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="empModal" class="modal hidden">
+  <div class="modalbox">
+    <div class="section-head"><h2>재택근무자 등록</h2><button class="btn secondary" onclick="closeEmployeeModal()">닫기</button></div>
+    <div class="formgrid">
+      <div class="field"><label>성명</label><input id="eName"></div>
+      <div class="field"><label>부서</label><input id="eDept"></div>
+      <div class="field"><label>부서장</label><input id="eHead"></div>
+      <div class="field"><label>재택유형</label><select id="eType"><option>정기</option><option>한시</option><option>예외승인</option></select></div>
+      <div class="field"><label>시작일</label><input type="date" id="eStart"></div>
+      <div class="field"><label>종료일</label><input type="date" id="eEnd"></div>
+    </div>
+    <div class="actions"><button class="btn" onclick="addEmployee()">등록</button></div>
+  </div>
+</div>
+
+<script>
+const LS='crosscert_wfh_v1';
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('workDate').value=today;
+document.getElementById('todayText').innerText=new Date().toLocaleString('ko-KR',{dateStyle:'full',timeStyle:'short'});
+
+const seed={
+ employees:[
+  {name:'홍길동',dept:'인사팀',head:'이달훈',type:'정기',start:'2026-09-01',end:'2026-12-31',status:'active'},
+  {name:'김정률',dept:'데이터센터팀',head:'한인석',type:'한시',start:'2026-09-11',end:'2026-10-10',status:'active'},
+  {name:'최윤서',dept:'인사팀',head:'이달훈',type:'예외승인',start:'2026-09-12',end:'2026-09-30',status:'active'}
+ ],
+ logs:[
+  {name:'홍길동',dept:'인사팀',head:'이달훈',date:today,in:'09:02',out:'18:07',plan:'채용 현황 점검 및 재택근무 관리안 정리',completed:'채용 현황 업데이트, 재택근무 데이터 정리 완료',ongoing:'관리지표 보완',nextPlan:'대표 보고자료 작성',remarks:'',amCheck:'Y',pmCheck:'Y',midProgress:'채용 현황 정리 및 관리지표 보완 진행',completionRate:95,availability:'normal',evidence:'채용현황 업데이트 및 관리자료 정리',delayReason:'',approved:true,managerNote:''},
+  {name:'최윤서',dept:'인사팀',head:'이달훈',date:today,in:'',out:'',plan:'',completed:'',ongoing:'',nextPlan:'',remarks:'',amCheck:'',pmCheck:'',midProgress:'',completionRate:0,availability:'',evidence:'',delayReason:'',approved:false,managerNote:''}
+ ],
+ settings:{stdIn:'09:00',lateAt:'09:10',stdOut:'18:00',minText:20}
+};
+let db=JSON.parse(localStorage.getItem(LS)||'null')||seed;
+db.employees=(db.employees||[]).filter(e=>e.name!=='김정률');
+db.logs=(db.logs||[]).filter(l=>l.name!=='김정률');
+if(db.riskActions && db.riskActions['김정률']) delete db.riskActions['김정률'];
+localStorage.setItem(LS,JSON.stringify(db));
+if(!db.riskActions) db.riskActions={};
+
+if(!db.users) db.users=[
+ {email:'dhlee1@crosscert.com',name:'이달훈',role:'hr',dept:'인사팀',team:'HR'},
+ {email:'manager1@crosscert.com',name:'인사팀장',role:'manager',dept:'인사팀',team:'HR'},
+ {email:'employee1@crosscert.com',name:'홍길동',role:'employee',dept:'인사팀',team:'HR'},
+ {email:'employee2@crosscert.com',name:'최윤서',role:'employee',dept:'인사팀',team:'HR'}
+];
+if(!db.employeeLinks) db.employeeLinks={
+ '홍길동':{email:'employee1@crosscert.com',managerEmail:'manager1@crosscert.com',team:'HR'},
+ '최윤서':{email:'employee2@crosscert.com',managerEmail:'manager1@crosscert.com',team:'HR'}
+};
+let currentUser=null;
+const GOOGLE_CLIENT_ID='301246489122-62scmtd7qa8q1h573p7vl97sjll17u9o.apps.googleusercontent.com';
+const ALLOWED_DOMAIN='crosscert.com';
+
+function parseJwt(token){
+ try{
+  const base64Url=token.split('.')[1];
+  const base64=base64Url.replace(/-/g,'+').replace(/_/g,'/');
+  return JSON.parse(decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+ }catch(e){ return null; }
+}
+function setSessionByEmail(email,displayName){
+ const normalized=(email||'').toLowerCase().trim();
+ if(!normalized){loginMsg.innerText='Google 계정 이메일을 확인할 수 없습니다.';return;}
+ if(!normalized.endsWith('@'+ALLOWED_DOMAIN)){
+   loginMsg.innerText='회사 Google Workspace 계정만 로그인할 수 있습니다.';return;
+ }
+ const u=db.users.find(x=>(x.email||'').toLowerCase()===normalized);
+ if(!u){
+   loginMsg.innerText='등록되지 않은 사용자입니다. HR 관리자에게 계정 등록을 요청하세요.';return;
+ }
+ currentUser={...u,displayName:displayName||u.name};
+ sessionStorage.setItem('crosscert_wfh_email',normalized);
+ document.getElementById('loginScreen').classList.add('hidden');
+ document.getElementById('loginUserLabel').innerText=`${u.name} · ${u.role==='hr'?'HR 관리자':u.role==='manager'?'팀장':'직원'} · ${normalized}`;
+ applyAccess();
+ render();
+}
+function handleGoogleCredential(response){
+ const payload=parseJwt(response.credential);
+ if(!payload){loginMsg.innerText='Google 로그인 정보를 확인할 수 없습니다.';return;}
+ setSessionByEmail(payload.email,payload.name);
+}
+function initGoogleLogin(){
+ const holder=document.getElementById('googleSignInButton');
+ const msg=document.getElementById('loginMsg');
+ if(!holder) return;
+ if(typeof google==='undefined' || !google.accounts || !google.accounts.id){
+   if(msg) msg.innerText='Google 로그인 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.';
+   return;
+ }
+ google.accounts.id.initialize({
+   client_id:GOOGLE_CLIENT_ID,
+   callback:handleGoogleCredential,
+   hd:ALLOWED_DOMAIN,
+   auto_select:false
+ });
+ holder.innerHTML='';
+ google.accounts.id.renderButton(holder,{
+   theme:'outline',
+   size:'large',
+   width:360,
+   text:'signin_with',
+   shape:'rectangular',
+   logo_alignment:'left'
+ });
+}
+function restoreSession(){
+ const email=sessionStorage.getItem('crosscert_wfh_email');
+ if(!email) return false;
+ const u=db.users.find(x=>(x.email||'').toLowerCase()===email.toLowerCase());
+ if(!u) return false;
+ setSessionByEmail(email,u.name); return true;
+}
+function logout(){
+ currentUser=null;
+ sessionStorage.removeItem('crosscert_wfh_email');
+ document.getElementById('loginScreen').classList.remove('hidden');
+}
+function canViewEmployeeName(name){
+ if(!currentUser) return false;
+ if(currentUser.role==='hr') return true;
+ if(currentUser.role==='employee') return currentUser.name===name;
+ if(currentUser.role==='manager'){
+   if(currentUser.name===name) return true;
+   const link=db.employeeLinks[name];
+   return !!link && (link.managerEmail||'').toLowerCase()===(currentUser.email||'').toLowerCase();
+ }
+ return false;
+}
+function visibleEmployees(){
+ return db.employees.filter(e=>canViewEmployeeName(e.name));
+}
+function visibleLogs(){
+ return db.logs.filter(l=>canViewEmployeeName(l.name));
+}
+function applyAccess(){
+ if(!currentUser) return;
+ const isHR=currentUser.role==='hr', isMgr=currentUser.role==='manager';
+ const nav=(sel)=>document.querySelector(sel);
+ nav('[data-view="approval"]').style.display=(isHR||isMgr)?'block':'none';
+ nav('[data-view="employees"]').style.display=isHR?'block':'none';
+ nav('[data-view="risk"]').style.display=(isHR||isMgr)?'block':'none';
+ nav('[data-view="profiles"]').style.display=isHR?'block':'none';
+ nav('[data-view="reports"]').style.display=(isHR||isMgr)?'block':'none';
+ nav('[data-view="users"]').style.display=isHR?'block':'none'; nav('[data-view="settings"]').style.display=isHR?'block':'none';
+ // 직원은 "내 재택근무" 중심
+ if(currentUser.role==='employee'){
+   document.querySelector('[data-view="worklog"]').click();
+ }
+}
+
+if(!db.deptProfiles) db.deptProfiles={
+ dev:{label:'개발/연구',keywords:['개발','연구','기술','기반기술','응용기술'],weight:20,minCount:1,evidence:'커밋, 이슈, 테스트, 배포, 코드리뷰, 설계/문서',critical:['산출물 증빙 없음','장시간 진행기록 없음','배포/장애 후 기록 누락']},
+ ops:{label:'데이터센터/운영',keywords:['데이터센터','운영','DC'],weight:25,minCount:1,evidence:'점검표, 장애/티켓, 모니터링, 변경이력, 인수인계',critical:['장애/이상 미보고','점검기록 누락','연락불가']},
+ sales:{label:'영업/사업',keywords:['영업','Sales','사업','GBU','I-Sales','SSL'],weight:20,minCount:2,evidence:'고객미팅, 통화, 제안, Follow-up, CRM/파이프라인',critical:['고객접점 없음','후속조치 누락','CRM 미기록']},
+ hr:{label:'인사/관리',keywords:['인사','HR','총무','관리'],weight:20,minCount:2,evidence:'처리문서, 보고, 일정, 요청응답, 후속조치',critical:['마감 미준수','요청 장시간 미응답','보고/후속조치 누락']},
+ finance:{label:'재경',keywords:['재경','회계','재무','Finance'],weight:25,minCount:1,evidence:'지급/정산, 증빙검토, 마감, 승인내역, 오류정정',critical:['마감 누락','증빙 오류','재처리 반복']},
+ support:{label:'고객지원/콜센터',keywords:['콜센터','고객지원','CS','Support'],weight:25,minCount:5,evidence:'콜/티켓, SLA, 이관, 미처리건, 상담기록',critical:['응답불가','SLA 초과','미처리 누적']},
+ general:{label:'일반',keywords:[],weight:15,minCount:1,evidence:'업무 산출물, 처리내역, 회의/보고, 시스템 기록',critical:['업무증빙 없음','중간기록 없음']}
+};
+function persist(){localStorage.setItem(LS,JSON.stringify(db))}
+function badge(txt,cls){return `<span class="badge ${cls}">${txt}</span>`}
+function fidelityScore(l){
+ let score=100;
+ if(!l.in) return 0;
+ if(l.in>db.settings.lateAt) score-=10;
+ if(!l.plan || l.plan.length<db.settings.minText) score-=15;
+ if(l.amCheck!=='Y') score-=10;
+ if(l.pmCheck!=='Y') score-=10;
+ if(!l.midProgress || l.midProgress.length<10) score-=15;
+ const cr=Number(l.completionRate||0);
+ if(cr<80) score-=10;
+ if(cr<50) score-=10;
+ if(l.availability==='limited') score-=5;
+ if(l.availability==='issue' || !l.availability) score-=15;
+ if(!l.evidence || l.evidence.length<10) score-=15;
+ if(l.out && (!l.completed || l.completed.length<db.settings.minText)) score-=10;
+ return Math.max(0,Math.min(100,score));
+}
+function fidelityStatus(l){
+ const s=fidelityScore(l);
+ if(s>=90) return {txt:'양호 '+s+'점',cls:'ok'};
+ if(s>=75) return {txt:'관찰 '+s+'점',cls:'warn'};
+ return {txt:'점검필요 '+s+'점',cls:'bad'};
+}
+function statusOf(l){
+ if(!l.in) return {txt:'미출근',cls:'bad',risk:true};
+ if(l.in>db.settings.lateAt) return {txt:'지각',cls:'warn',risk:true};
+ if(!l.plan || l.plan.length<db.settings.minText) return {txt:'계획 미흡',cls:'warn',risk:true};
+ if(l.out==='' && l.date<today) return {txt:'퇴근 누락',cls:'bad',risk:true};
+ if(l.out && (!l.completed || l.completed.length<db.settings.minText)) return {txt:'일지 미흡',cls:'warn',risk:true};
+ if(fidelityScore(l)<75) return {txt:'업무충실도 점검',cls:'bad',risk:true};
+ if(fidelityScore(l)<90) return {txt:'업무충실도 관찰',cls:'warn',risk:true};
+ return {txt:l.out?'정상':'근무중',cls:l.out?'ok':'info',risk:false};
+}
+
+
+function getDeptProfile(lOrEmp){
+ const dept=(lOrEmp.dept||'').toLowerCase();
+ const explicit=lOrEmp.deptProfile;
+ if(explicit && explicit!=='auto' && db.deptProfiles[explicit]) return [explicit,db.deptProfiles[explicit]];
+ for(const [k,p] of Object.entries(db.deptProfiles)){
+   if(k==='general') continue;
+   if((p.keywords||[]).some(x=>dept.includes(String(x).toLowerCase()))) return [k,p];
+ }
+ return ['general',db.deptProfiles.general];
+}
+function deptSpecificReasons(l){
+ const [key,p]=getDeptProfile(l), r=[];
+ const de=(l.deptEvidence||'').trim(), cnt=Number(l.workCount||0);
+ if(de.length<10) r.push({code:'DEPT_EVID',label:`${p.label} 핵심업무 증빙 미흡`,weight:p.weight});
+ if(cnt<p.minCount) r.push({code:'DEPT_COUNT',label:`${p.label} 핵심업무 처리량 부족`,weight:Math.max(10,p.weight-5)});
+ if(key==='dev'){
+   if(l.completionRate<60 && (!l.delayReason||l.delayReason.length<10)) r.push({code:'DEV_DELAY',label:'개발 진척 저조 및 지연사유 미기재',weight:20});
+ }
+ if(key==='ops'){
+   if(l.availability!=='normal') r.push({code:'OPS_CONTACT',label:'운영업무 연락·대응 상태 비정상',weight:25});
+ }
+ if(key==='sales'){
+   if(cnt<2) r.push({code:'SALES_TOUCH',label:'고객/사업 활동량 부족',weight:20});
+ }
+ if(key==='hr'){
+   if(l.completionRate<80 && (!l.delayReason||l.delayReason.length<10)) r.push({code:'HR_DEADLINE',label:'인사·관리 업무 마감/진척 관리 필요',weight:20});
+ }
+ if(key==='finance'){
+   if(!l.evidence || l.evidence.length<15) r.push({code:'FIN_PROOF',label:'정산·지급·증빙 확인기록 미흡',weight:20});
+ }
+ if(key==='support'){
+   if(cnt<5) r.push({code:'SUPPORT_VOLUME',label:'콜/티켓 처리량 기준 미달',weight:25});
+   if(l.availability!=='normal') r.push({code:'SUPPORT_AVAIL',label:'고객응대 가능상태 이상',weight:25});
+ }
+ return r;
+}
+function renderProfiles(){
+ if(!document.getElementById('profileRows')) return;
+ profileRows.innerHTML=Object.entries(db.deptProfiles).map(([k,p])=>`<tr>
+ <td><b>${p.label}</b></td>
+ <td>${(p.keywords||[]).length?'자동판정 키워드: '+p.keywords.join(', '):'공통 기준'}</td>
+ <td>${p.evidence}</td>
+ <td>${(p.critical||[]).join('<br>')}</td>
+ <td>부서특성 ${p.weight}점 / 최소처리 ${p.minCount}건</td>
+ </tr>`).join('');
+}
+function resetDeptProfiles(){
+ if(confirm('부서별 관리기준을 기본값으로 복원할까요?')){ delete db.deptProfiles; localStorage.removeItem(LS); location.reload(); }
+}
+
+function anomalyReasons(l){
+ const r=[];
+ if(!l) return [{code:'NOLOG',label:'기록 없음',weight:30}];
+ if(!l.in) r.push({code:'NOIN',label:'미출근/출근체크 누락',weight:35});
+ if(l.in && l.in>db.settings.lateAt) r.push({code:'LATE',label:'지각',weight:15});
+ if(!l.plan || l.plan.length<db.settings.minText) r.push({code:'PLAN',label:'업무계획 미흡',weight:15});
+ if(l.amCheck!=='Y') r.push({code:'AM',label:'오전 진행확인 미흡',weight:10});
+ if(l.pmCheck!=='Y') r.push({code:'PM',label:'오후 진행확인 미흡',weight:10});
+ if(!l.midProgress || l.midProgress.length<10) r.push({code:'MID',label:'중간 진행기록 미흡',weight:15});
+ if(Number(l.completionRate||0)<50) r.push({code:'LOW50',label:'계획대비 완료율 50% 미만',weight:25});
+ else if(Number(l.completionRate||0)<80) r.push({code:'LOW80',label:'계획대비 완료율 80% 미만',weight:10});
+ if(l.availability==='issue' || !l.availability) r.push({code:'CONTACT',label:'연락·협업 상태 불량/미확인',weight:20});
+ if(!l.evidence || l.evidence.length<10) r.push({code:'EVID',label:'업무 산출물·증빙 미흡',weight:20});
+ if(l.out==='' && l.date<today) r.push({code:'NOOUT',label:'퇴근체크 누락',weight:25});
+ if(l.out && (!l.completed || l.completed.length<db.settings.minText)) r.push({code:'LOG',label:'완료업무 기록 미흡',weight:15});
+ r.push(...deptSpecificReasons(l));
+ return r;
+}
+function employeeRisk(name){
+ const emp=db.employees.find(e=>e.name===name)||{name,dept:''};
+ const logs=visibleLogs().filter(l=>l.name===name).sort((a,b)=>b.date.localeCompare(a.date));
+ const recent=logs.slice(0,5);
+ let base=0, reasons=[];
+ if(recent[0]){
+   reasons=anomalyReasons(recent[0]);
+   base=reasons.reduce((s,x)=>s+x.weight,0);
+ }
+ const codeCounts={};
+ recent.forEach(l=>anomalyReasons(l).forEach(x=>codeCounts[x.code]=(codeCounts[x.code]||0)+1));
+ const repeats=Object.entries(codeCounts).filter(([k,v])=>v>=2);
+ let repeatScore=repeats.reduce((s,[k,v])=>s+Math.min(20,(v-1)*8),0);
+ const multiDayRisk=recent.filter(l=>anomalyReasons(l).length>=2).length;
+ if(multiDayRisk>=2) repeatScore+=10;
+ let score=Math.min(100,base+repeatScore);
+ let level=score>=60?'high':score>=30?'mid':'low';
+ const act=db.riskActions[name]||{status:'open',note:'',updatedAt:'',nextCheck:''};
+ return {emp,logs,recent,reasons,repeats,score,level,act,multiDayRisk};
+}
+function levelBadge(level,score){
+ return level==='high'?badge('고위험 '+score,'bad'):level==='mid'?badge('중위험 '+score,'warn'):badge('저위험 '+score,'ok');
+}
+function actionBadge(st){
+ return st==='done'?badge('조치완료','ok'):st==='checking'?badge('확인중','warn'):badge('미조치','bad');
+}
+function repeatText(r){
+ if(!r.repeats.length) return '반복 없음';
+ const map={NOIN:'미출근',LATE:'지각',PLAN:'계획미흡',AM:'오전확인',PM:'오후확인',MID:'중간기록',LOW50:'완료율<50',LOW80:'완료율<80',CONTACT:'연락상태',EVID:'증빙미흡',NOOUT:'퇴근누락',LOG:'일지미흡'};
+ return r.repeats.map(([c,n])=>`${map[c]||c} ${n}회`).join(', ');
+}
+function renderRiskDashboard(){
+ const arr=visibleEmployees().filter(e=>e.status==='active').map(e=>employeeRisk(e.name)).sort((a,b)=>b.score-a.score);
+ document.getElementById('riskRows').innerHTML=arr.slice(0,8).map(r=>`<tr>
+ <td><b>${r.emp.name}</b><br><span class="muted small">${r.emp.dept} · ${getDeptProfile(r.emp)[1].label}</span></td>
+ <td>${levelBadge(r.level,r.score)}</td><td><b>${r.score}</b></td>
+ <td>${r.reasons.length?r.reasons.map(x=>x.label).join('<br>'):'이상 없음'}</td>
+ <td>${repeatText(r)}</td><td>${actionBadge(r.act.status)}</td>
+ <td><button class="btn secondary" onclick="openRiskModal('${r.emp.name.replaceAll("'","\\'")}')">조치</button></td></tr>`).join('');
+}
+function renderRiskManagement(){
+ const q=((document.getElementById('riskSearch')||{}).value||'').toLowerCase();
+ const lv=((document.getElementById('riskLevelFilter')||{}).value||'');
+ const af=((document.getElementById('riskActionFilter')||{}).value||'');
+ const arr=visibleEmployees().map(e=>employeeRisk(e.name)).filter(r=>(!q||(r.emp.name+r.emp.dept).toLowerCase().includes(q))&&(!lv||r.level===lv)&&(!af||r.act.status===af)).sort((a,b)=>b.score-a.score);
+ if(document.getElementById('riskHigh')) {
+   const all=visibleEmployees().map(e=>employeeRisk(e.name));
+   riskHigh.innerText=all.filter(r=>r.level==='high').length;
+   riskMid.innerText=all.filter(r=>r.level==='mid').length;
+   riskOpen.innerText=all.filter(r=>r.act.status!=='done'&&r.score>=30).length;
+   riskRepeat.innerText=all.filter(r=>r.repeats.length>0).length;
+ }
+ if(document.getElementById('riskManageRows')) riskManageRows.innerHTML=arr.map(r=>`<tr>
+ <td><b>${r.emp.name}</b></td><td>${r.emp.dept}</td><td>${levelBadge(r.level,r.score)}</td><td><b>${r.score}</b></td>
+ <td>${r.reasons.length?r.reasons.map(x=>x.label).join('<br>'):'이상 없음'}</td>
+ <td>${repeatText(r)}${r.multiDayRisk>=2?'<br><span class="badge bad">복합 이상 '+r.multiDayRisk+'회</span>':''}</td>
+ <td>${r.act.updatedAt?new Date(r.act.updatedAt).toLocaleString('ko-KR'):'-'}</td><td>${actionBadge(r.act.status)}</td>
+ <td><button class="btn secondary" onclick="openRiskModal('${r.emp.name.replaceAll("'","\\'")}')">조치기록</button></td></tr>`).join('');
+}
+function openRiskModal(name){
+ const r=employeeRisk(name); riskTargetName.value=name; riskTargetDisplay.value=name+' / '+r.emp.dept;
+ riskActionStatus.value=r.act.status||'open'; riskActionNote.value=r.act.note||''; riskNextCheck.value=r.act.nextCheck||'';
+ riskModal.classList.remove('hidden');
+}
+function closeRiskModal(){riskModal.classList.add('hidden')}
+function saveRiskAction(){
+ const n=riskTargetName.value;
+ db.riskActions[n]={status:riskActionStatus.value,note:riskActionNote.value.trim(),nextCheck:riskNextCheck.value,updatedAt:new Date().toISOString()};
+ persist(); closeRiskModal(); render();
+}
+
+
+function renderUsers(){
+ if(!document.getElementById('userRows')) return;
+ if(!currentUser || currentUser.role!=='hr'){ userRows.innerHTML=''; return; }
+ userRows.innerHTML=db.users.map(u=>{
+   let mgr='-';
+   if(u.role==='employee'){
+     const link=db.employeeLinks[u.name];
+     if(link){
+       const mu=db.users.find(x=>(x.email||'').toLowerCase()===(link.managerEmail||'').toLowerCase());
+       mgr=mu?`${mu.name} (${mu.email})`:(link.managerEmail||'-');
+     }
+   }
+   return `<tr><td><b>${u.email}</b></td><td>${u.name}</td><td>${u.role==='hr'?badge('HR 관리자','bad'):u.role==='manager'?badge('팀장','warn'):badge('직원','info')}</td><td>${u.dept||'-'}</td><td>${u.team||'-'}</td><td>${mgr}</td><td>${u.email==='dhlee1@crosscert.com'?'기본관리자':`<button class="btn red" onclick="deleteUser('${u.email}')">삭제</button>`}</td></tr>`;
+ }).join('');
+}
+function openUserModal(){ if(!currentUser||currentUser.role!=='hr') return; userModal.classList.remove('hidden'); }
+function closeUserModal(){ userModal.classList.add('hidden'); }
+function addUser(){
+ if(!currentUser||currentUser.role!=='hr') return;
+ const email=uEmail.value.trim().toLowerCase(), nm=uName.value.trim(), role=uRole.value;
+ if(!email||!nm){alert('Google 이메일과 성명을 입력하세요.');return;}
+ if(!email.endsWith('@'+ALLOWED_DOMAIN)){alert('회사 Google Workspace 계정만 등록할 수 있습니다.');return;}
+ if(db.users.some(x=>(x.email||'').toLowerCase()===email)){alert('이미 등록된 Google 계정입니다.');return;}
+ db.users.push({email,name:nm,role,dept:uDept.value.trim(),team:uTeam.value.trim()});
+ if(role==='employee'){
+   db.employeeLinks[nm]={email,managerEmail:uManagerEmail.value.trim().toLowerCase(),team:uTeam.value.trim()};
+ }
+ persist(); closeUserModal(); render(); alert('Google 계정이 등록되었습니다.');
+}
+function deleteUser(email){
+ if(!currentUser||currentUser.role!=='hr') return;
+ const u=db.users.find(x=>x.email===email); if(!u) return;
+ if(!confirm(`${u.name} (${u.email}) 계정을 삭제하시겠습니까?`)) return;
+ db.users=db.users.filter(x=>x.email!==email);
+ if(db.employeeLinks[u.name]) delete db.employeeLinks[u.name];
+ persist(); render();
+}
+
+function render(){
+ renderDashboard(); renderRiskDashboard(); renderRiskManagement(); renderProfiles(); renderMy(); renderApprovals(); renderEmployees(); renderReports(); renderUsers(); loadSettings();
+}
+function renderDashboard(){
+ const logs=visibleLogs().filter(x=>x.date===today); const active=visibleEmployees().filter(e=>e.status==='active'&&e.start<=today&&e.end>=today);
+ document.getElementById('kpiToday').innerText=active.length;
+ document.getElementById('kpiIn').innerText=logs.filter(x=>x.in).length;
+ document.getElementById('kpiRisk').innerText=active.map(e=>employeeRisk(e.name)).filter(r=>r.score>=30).length;
+ document.getElementById('kpiPending').innerText=logs.filter(x=>!x.approved).length;
+ document.getElementById('todayRows').innerHTML=active.map(e=>{
+   const l=logs.find(x=>x.name===e.name)||{name:e.name,dept:e.dept,in:'',out:'',plan:'',approved:false,date:today};
+   const s=statusOf(l);
+   return `<tr><td><b>${e.name}</b></td><td>${e.dept}</td><td>${l.in||'-'}</td><td>${l.out||'-'}</td><td>${l.plan?l.plan.slice(0,35):'<span class="muted">미작성</span>'}</td><td>${badge(s.txt,s.cls)}</td><td>${l.approved?badge('확인','ok'):badge('대기','warn')}</td></tr>`
+ }).join('');
+}
+function currentLog(){
+ const n=document.getElementById('name').value.trim(), d=document.getElementById('workDate').value;
+ return db.logs.find(x=>x.name===n&&x.date===d);
+}
+function syncForm(l){
+ if(!l) return;
+ ['name','dept','head'].forEach(id=>document.getElementById(id).value=l[id]||'');
+ document.getElementById('workDate').value=l.date;
+ document.getElementById('plan').value=l.plan||''; document.getElementById('completed').value=l.completed||'';
+ document.getElementById('ongoing').value=l.ongoing||''; document.getElementById('nextPlan').value=l.nextPlan||''; document.getElementById('remarks').value=l.remarks||''; document.getElementById('amCheck').value=l.amCheck||''; document.getElementById('pmCheck').value=l.pmCheck||''; document.getElementById('midProgress').value=l.midProgress||''; document.getElementById('completionRate').value=l.completionRate||0; document.getElementById('availability').value=l.availability||''; document.getElementById('evidence').value=l.evidence||''; document.getElementById('delayReason').value=l.delayReason||''; document.getElementById('deptProfile').value=l.deptProfile||'auto'; document.getElementById('workCount').value=l.workCount||0; document.getElementById('deptEvidence').value=l.deptEvidence||'';
+ document.getElementById('workStatus').innerHTML=`출근 ${l.in||'-'} / 퇴근 ${l.out||'-'} / ${badge(statusOf(l).txt,statusOf(l).cls)}`;
+}
+function formData(){
+ const nm=currentUser&&currentUser.role==='employee'?currentUser.name:name.value.trim(); const dp=currentUser&&currentUser.role==='employee'?(currentUser.dept||dept.value.trim()):dept.value.trim(); return {name:nm,dept:dp,head:head.value.trim(),date:workDate.value,plan:plan.value.trim(),completed:completed.value.trim(),ongoing:ongoing.value.trim(),nextPlan:nextPlan.value.trim(),remarks:remarks.value.trim(),amCheck:amCheck.value,pmCheck:pmCheck.value,midProgress:midProgress.value.trim(),completionRate:Number(completionRate.value||0),availability:availability.value,evidence:evidence.value.trim(),delayReason:delayReason.value.trim(),deptProfile:deptProfile.value,workCount:Number(workCount.value||0),deptEvidence:deptEvidence.value.trim()};
+}
+function nowTime(){return new Date().toTimeString().slice(0,5)}
+function clockIn(){
+ let d=formData(); if(!d.name||!d.date){alert('성명과 근무일을 입력하세요.');return}
+ let l=currentLog(); if(l&&l.in){alert('이미 출근 체크되었습니다.');return}
+ if(!l){l={...d,in:nowTime(),out:'',approved:false,managerNote:''};db.logs.push(l)} else {Object.assign(l,d,{in:nowTime()})}
+ persist();syncForm(l);render();
+}
+function saveDraft(){
+ let d=formData(),l=currentLog(); if(!l){l={...d,in:'',out:'',approved:false,managerNote:''};db.logs.push(l)} else Object.assign(l,d);
+ persist();syncForm(l);render();alert('임시저장되었습니다.');
+}
+function clockOut(){
+ let d=formData(),l=currentLog(); if(!l||!l.in){alert('먼저 출근 체크를 하세요.');return}
+ if(d.completed.length<db.settings.minText){alert('Completed Tasks를 좀 더 구체적으로 작성하세요.');return} if(!d.amCheck||!d.pmCheck||!d.midProgress||!d.availability||!d.evidence){alert('소정근로시간 내 업무 충실도 확인 항목을 모두 작성하세요.');return} if(!d.deptEvidence || d.deptEvidence.length<10){alert('부서 특성별 핵심업무 기록을 입력하세요.');return}
+ Object.assign(l,d,{out:nowTime(),approved:false});persist();syncForm(l);render();alert('퇴근 처리 및 일지가 제출되었습니다.');
+}
+function renderMy(){
+ if(currentUser && currentUser.role==='employee'){
+   document.getElementById('name').value=currentUser.name;
+   document.getElementById('dept').value=currentUser.dept||'';
+   document.getElementById('name').readOnly=true;
+   document.getElementById('dept').readOnly=true;
+ }
+ const n=currentUser&&currentUser.role==='employee'?currentUser.name:document.getElementById('name').value.trim();
+ const rows=db.logs.filter(x=>x.name===n).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+ document.getElementById('myRows').innerHTML=rows.map(l=>`<tr><td>${l.date}</td><td>${l.in||'-'}</td><td>${l.out||'-'}</td><td>${badge(statusOf(l).txt,statusOf(l).cls)}</td><td>${l.approved?badge('확인','ok'):badge('대기','warn')}</td></tr>`).join('');
+ const l=currentLog(); if(l) syncForm(l);
+}
+function renderApprovals(){
+ const rows=visibleLogs().filter(x=>x.out && !x.approved);
+ document.getElementById('approvalRows').innerHTML=rows.length?rows.map((l,i)=>{
+  const idx=db.logs.indexOf(l),s=statusOf(l);
+  return `<tr><td><b>${l.name}</b><br><span class="muted small">${l.dept}</span></td><td>${l.date}<br>${l.in}~${l.out}</td><td>${l.plan}</td><td>${l.completed}</td><td>${Number(l.completionRate||0)}%</td><td>${badge(fidelityStatus(l).txt,fidelityStatus(l).cls)}</td><td><button class="btn green" onclick="approve(${idx})">확인</button> <button class="btn secondary" onclick="detail(${idx})">상세</button></td></tr>`
+ }).join(''):`<tr><td colspan="7" class="muted">확인 대기 건이 없습니다.</td></tr>`;
+}
+function approve(i){
+ const l=db.logs[i];
+ if(!currentUser || !(currentUser.role==='hr'||currentUser.role==='manager') || !canViewEmployeeName(l.name)){alert('권한이 없습니다.');return;}
+ l.approved=true;l.approvedAt=new Date().toISOString();l.approvedBy=currentUser.email;persist();render();
+}
+function detail(i){const l=db.logs[i];alert(`[${l.name} / ${l.date}]\n\n오늘 계획:\n${l.plan}\n\n완료:\n${l.completed}\n\n진행중:\n${l.ongoing}\n\n익일계획:\n${l.nextPlan}\n\n업무충실도: ${fidelityScore(l)}점\n오전확인: ${l.amCheck||'-'} / 오후확인: ${l.pmCheck||'-'}\n계획대비 완료율: ${l.completionRate||0}%\n연락·협업 상태: ${l.availability||'-'}\n중간 진행내용:\n${l.midProgress||'-'}\n\n산출물/증빙:\n${l.evidence||'-'}\n\n지연사유:\n${l.delayReason||'-'}\n\n부서 관리유형: ${getDeptProfile(l)[1].label}\n핵심업무 처리건수: ${l.workCount||0}\n부서별 핵심업무 기록:\n${l.deptEvidence||'-'}\n\n특이사항:\n${l.remarks||'-'}`)}
+function renderEmployees(){
+ const q=(document.getElementById('empSearch').value||'').toLowerCase(),st=document.getElementById('empStatus').value;
+ const arr=visibleEmployees().filter(e=>(!q||(e.name+e.dept).toLowerCase().includes(q))&&(!st||e.status===st));
+ document.getElementById('employeeRows').innerHTML=arr.map(e=>{
+  const logs=db.logs.filter(l=>l.name===e.name), risks=logs.filter(l=>statusOf(l).risk).length;
+  return `<tr><td><b>${e.name}</b></td><td>${e.dept}</td><td>${e.head}</td><td>${e.type}</td><td>${e.start} ~ ${e.end}</td><td>${e.status==='active'?badge('재택승인','ok'):badge('중지','bad')}</td><td>${risks}</td><td><button class="btn red" onclick="deleteEmployee('${e.name.replaceAll("'","\\'")}')">삭제</button></td></tr>`
+ }).join('');
+}
+
+function deleteEmployee(name){ if(!currentUser||currentUser.role!=='hr'){alert('HR 관리자만 삭제할 수 있습니다.');return;}
+ const emp=db.employees.find(e=>e.name===name);
+ if(!emp) return;
+ const related=db.logs.filter(l=>l.name===name).length;
+ const msg=related>0
+   ? `${name} 재택근무자 등록을 삭제하시겠습니까?\n\n※ 과거 재택근무 기록 ${related}건은 보존됩니다.`
+   : `${name} 재택근무자 등록을 삭제하시겠습니까?`;
+ if(!confirm(msg)) return;
+ db.employees=db.employees.filter(e=>e.name!==name);
+ persist();
+ render();
+ alert(`${name}님의 재택근무자 등록이 삭제되었습니다.\n과거 근무기록은 유지됩니다.`);
+}
+
+function openEmployeeModal(){empModal.classList.remove('hidden');eStart.value=today;eEnd.value=today}
+function closeEmployeeModal(){empModal.classList.add('hidden')}
+function addEmployee(){ if(!currentUser||currentUser.role!=='hr'){alert('HR 관리자만 등록할 수 있습니다.');return;}
+ const nm=eName.value.trim();
+ if(!nm){alert('성명을 입력하세요.');return}
+ if(db.employees.some(e=>e.name===nm)){alert('이미 등록된 재택근무자입니다.');return}
+ if(!eDept.value.trim()){alert('부서를 입력하세요.');return}
+ if(!eStart.value||!eEnd.value){alert('승인 시작일과 종료일을 입력하세요.');return}
+ if(eStart.value>eEnd.value){alert('종료일은 시작일 이후여야 합니다.');return}
+ db.employees.push({name:nm,dept:eDept.value.trim(),head:eHead.value.trim(),type:eType.value,start:eStart.value,end:eEnd.value,status:'active'});
+ persist();closeEmployeeModal();render();
+ alert(`${nm}님이 재택근무자로 등록되었습니다.`);
+}
+function renderReports(){
+ const scopedLogs=visibleLogs(); const total=scopedLogs.length||1, inOk=scopedLogs.filter(l=>l.in&&l.in<=db.settings.lateAt).length, submitted=scopedLogs.filter(l=>l.out&&l.completed).length, appr=scopedLogs.filter(l=>l.approved).length, risk=scopedLogs.filter(l=>statusOf(l).risk).length;
+ const vals=[Math.round(inOk/total*100),Math.round(submitted/total*100),Math.round(appr/total*100)];
+ ['r1','r2','r3'].forEach((id,i)=>document.getElementById(id).innerText=vals[i]+'%'); ['p1','p2','p3'].forEach((id,i)=>document.getElementById(id).style.width=vals[i]+'%'); r4.innerText=risk;
+ reportRows.innerHTML=visibleEmployees().map(e=>{
+  const ls=db.logs.filter(l=>l.name===e.name), late=ls.filter(l=>l.in&&l.in>db.settings.lateAt).length, missOut=ls.filter(l=>!l.out&&l.date<today).length, missLog=ls.filter(l=>l.out&&(!l.completed||l.completed.length<db.settings.minText)).length, pend=ls.filter(l=>!l.approved).length, score=late+missOut+missLog+pend;
+  const avgF=ls.length?Math.round(ls.reduce((a,l)=>a+fidelityScore(l),0)/ls.length):0; return `<tr><td><b>${e.name}</b></td><td>${ls.length}</td><td>${late}</td><td>${missOut}</td><td>${missLog}</td><td>${avgF}점</td><td>${pend}</td><td>${avgF>=90&&score===0?badge('양호','ok'):avgF>=75&&score<=2?badge('관찰','warn'):badge('점검필요','bad')}</td></tr>`
+ }).join('');
+}
+function loadSettings(){stdIn.value=db.settings.stdIn;lateAt.value=db.settings.lateAt;stdOut.value=db.settings.stdOut;minText.value=db.settings.minText}
+function saveSettings(){db.settings={stdIn:stdIn.value,lateAt:lateAt.value,stdOut:stdOut.value,minText:+minText.value};persist();render();alert('관리 기준을 저장했습니다.')}
+function resetDemo(){if(confirm('데모 데이터를 초기화할까요?')){localStorage.removeItem(LS);location.reload()}}
+function exportCSV(){
+ const head=['Name','Department','Head','Date','In','Out','Plan','Completed','Ongoing','NextPlan','AM_Check','PM_Check','Mid_Progress','Completion_Rate','Availability','Evidence','Delay_Reason','Dept_Profile','Work_Count','Dept_Evidence','Remarks','Fidelity_Score','Approved','Status'];
+ const rows=db.logs.map(l=>[l.name,l.dept,l.head,l.date,l.in,l.out,l.plan,l.completed,l.ongoing,l.nextPlan,l.amCheck,l.pmCheck,l.midProgress,l.completionRate,l.availability,l.evidence,l.delayReason,getDeptProfile(l)[1].label,l.workCount,l.deptEvidence,l.remarks,fidelityScore(l),l.approved?'Y':'N',statusOf(l).txt]);
+ const csv=[head,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
+ const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='재택근무_관리현황.csv';a.click();
+}
+document.querySelectorAll('.nav button').forEach(btn=>btn.onclick=()=>{
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+ document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));document.getElementById(btn.dataset.view).classList.remove('hidden');
+ pageTitle.innerText=btn.innerText;
+});
+
+['name','workDate'].forEach(id=>document.getElementById(id).addEventListener('change',renderMy));
+if(!restoreSession()){
+  document.getElementById('loginScreen').classList.remove('hidden');
+  setTimeout(initGoogleLogin,300);
+  setTimeout(initGoogleLogin,1200);
+}
+</script>
+
+<div id="riskModal" class="modal hidden">
+  <div class="modalbox">
+    <div class="section-head"><h2>이상징후 조치 기록</h2><button class="btn secondary" onclick="closeRiskModal()">닫기</button></div>
+    <input type="hidden" id="riskTargetName">
+    <div class="formgrid">
+      <div class="field"><label>직원</label><input id="riskTargetDisplay" disabled></div>
+      <div class="field"><label>조치상태</label><select id="riskActionStatus"><option value="open">미조치</option><option value="checking">확인중</option><option value="done">조치완료</option></select></div>
+      <div class="field full"><label>확인/조치 내용</label><textarea id="riskActionNote" placeholder="예: 팀장 사실 확인 요청, 업무계획 보완 안내, 반복 시 재택승인 재검토 등"></textarea></div>
+      <div class="field full"><label>다음 점검일</label><input type="date" id="riskNextCheck"></div>
+    </div>
+    <div class="actions"><button class="btn" onclick="saveRiskAction()">조치 저장</button></div>
+  </div>
+</div>
+
+
+<div id="userModal" class="modal hidden">
+  <div class="modalbox">
+    <div class="section-head"><h2>사용자 계정 등록</h2><button class="btn secondary" onclick="closeUserModal()">닫기</button></div>
+    <div class="formgrid">
+      <div class="field full"><label>Google Workspace 이메일</label><input id="uEmail" placeholder="name@crosscert.com"></div>
+      <div class="field"><label>성명</label><input id="uName"></div>
+      <div class="field"><label>권한</label><select id="uRole"><option value="employee">직원</option><option value="manager">팀장</option><option value="hr">HR 관리자</option></select></div>
+      <div class="field"><label>부서</label><input id="uDept"></div>
+      <div class="field"><label>팀</label><input id="uTeam"></div>
+      <div class="field full"><label>상급 팀장 Google 이메일 (직원인 경우)</label><input id="uManagerEmail" placeholder="manager@crosscert.com"></div>
+    </div>
+    <div class="actions"><button class="btn" onclick="addUser()">계정 등록</button></div>
+  </div>
+</div>
+
+</body>
+</html>
