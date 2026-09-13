@@ -1,8 +1,11 @@
 {
-  "name": "crosscert-wfh-v11",
-  "version": "11.0.0",
+  "name": "crosscert-wfh-v11-1",
+  "version": "11.1.0",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js"
   },
