@@ -1,1 +1,16 @@
-{"name":"crosscert-wfh","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=18"}}
+{
+  "name": "crosscert-wfh-v11",
+  "version": "11.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "google-auth-library": "^10.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  }
+}
