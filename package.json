@@ -1,6 +1,6 @@
 {
   "name": "crosscert-wfh-v11-2",
-  "version": "11.2.0",
+  "version": "11.2.1",
   "private": true,
   "type": "commonjs",
   "engines": {"node": ">=18"},
