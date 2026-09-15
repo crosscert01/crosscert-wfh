@@ -1,10 +1,10 @@
 {
-  "name": "crosscert-wfh-v11-1",
-  "version": "11.1.1",
+  "name": "crosscert-wfh-v11-2",
+  "version": "11.2.0",
   "private": true,
   "type": "commonjs",
   "engines": {"node": ">=18"},
-  "scripts": {"start": "node migrate.js && node server.js"},
+  "scripts": {"start": "node migrate.js && node inject-permissions.js"},
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
